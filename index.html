@@ -3,164 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>raucry</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"> <!-- Font Awesome for icons -->
+    <title>Shader Website</title>
     <style>
         body {
-            background-color: #000; /* Background color */
             margin: 0;
-            padding: 0;
+            overflow: hidden;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            min-height: 100vh; /* Ensures full height */
-            position: relative; /* For overlay positioning */
-        }
-        .content {
-            background-color: #fff; /* Background color for content box */
-            color: #000; /* Text color */
-            font-family: 'Segoe UI Light', sans-serif; /* Font family */
-            width: 90%; /* Adjusted for responsiveness */
-            max-width: 600px; /* Maximum width */
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
-            gap: 20px; /* Even space between elements */
-            border-radius: 10px; /* Rounded corners for the container */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Adds shadow for depth */
+            height: 100vh;
+            background-color: #000;
         }
-        .divider {
-            width: 50%; /* Smaller width */
-            height: 1px;
-            background-color: #000; /* Divider color */
-            margin: 20px 0; /* Even spacing around divider */
-        }
-        .boxes {
-            display: flex;
-            flex-wrap: wrap; /* Allows boxes to wrap */
-            justify-content: center; /* Centers boxes horizontally */
-            gap: 20px; /* Even space between boxes */
-        }
-        .box {
-            width: 120px; /* Adjusted width */
-            height: 120px; /* Adjusted height to accommodate icons */
-            display: flex;
-            flex-direction: column; /* Stack icon and text */
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px; /* Adjusted rounded corners */
-            background-color: #333; /* Dark gray background */
-            cursor: pointer; /* Changes cursor to pointer to indicate clickable */
-            color: white; /* Text color */
-            text-decoration: none; /* Removes underline from links */
-            position: relative; /* Needed for hover effect */
-        }
-        .box:hover::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.2); /* Opaque white overlay */
-            border-radius: 5px; /* Match parent's border-radius */
-        }
-        .box i { /* Icon styling */
-            margin-bottom: 10px; /* Space between icon and text */
-        }
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
+        canvas {
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            opacity: 0;
-            transition: opacity 1s ease;
-            pointer-events: none; /* Prevent interaction with elements underneath */
-        }
-        .overlay.active {
-            opacity: 1;
-            pointer-events: auto; /* Allow interaction */
-        }
-        .overlay .link {
-            margin-top: 20px;
-            font-size: 16px;
-        }
-        .progress-bar {
-            width: 80%;
-            height: 20px;
-            background-color: #fff;
-            margin-top: 20px;
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .progress-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 0;
-            background-color: #4CAF50; /* Green */
-            transition: width 5s linear;
-        }        
-        .overlay.active .progress-bar::after {
-            width: 100%; /* Complete the progress bar fill over 5 seconds */
         }
     </style>
 </head>
 <body>
-    <div class="content">
-        <h1>raucry</h1>
-        <div class="divider"></div>
-        <div class="boxes">
-            <div class="box" onclick="handleClick(this, 'https://open.spotify.com/user/zf4qz71qk7vr445rm068p3ooh?si=ccb1e9c31e55422a')"><i class="fab fa-spotify"></i>Spotify</div>
-            <div class="box" onclick="handleClick(this, 'https://github.com/raucry')"><i class="fab fa-github"></i>GitHub</div>
-            <div class="box" onclick="handleClick(this, 'https://pinterest.co.uk/raucry')"><i class="fab fa-pinterest"></i>Pinterest</div>
-            <div class="box" onclick="handleClick(this, 'https://x.com/raucry')"><i class="fas fa-twitter"></i>X</div>
-        </div>
-    </div>
-    <div id="overlay" class="overlay">
-        <div id="overlayText">Redirecting...</div>
-        <div id="overlayLink" class="link"></div>
-        <div class="progress-bar"></div>
-    </div>
-
-    <script>
-        function handleClick(element, url) {
-            const overlay = document.getElementById('overlay');
-            const overlayText = document.getElementById('overlayText');
-            const overlayLink = document.getElementById('overlayLink');
-            const progressBar = document.querySelector('.progress-bar::after');
-
-            overlayText.textContent = `Redirecting to ${element.textContent}...`;
-            overlayLink.textContent = url;
-            overlayLink.href = url;
-            overlay.classList.add('active');
-
-            setTimeout(() => {
-                window.open(url, '_blank').focus();
-                overlay.classList.remove('active');
-            }, 5000); // Delay for 5 seconds before redirecting
-
-            // Reset progress bar (in case of multiple clicks)
-            progressBar.style.width = '0';
-            // Trigger reflow to restart CSS animation
-            void progressBar.offsetWidth;
-            // Start progress bar animation
-            progressBar.style.width = '100%';
-        }
-    </script>
+    <canvas id="canvas"></canvas>
+    <script src="script.js"></script>
 </body>
 </html>
