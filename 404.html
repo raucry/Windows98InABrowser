@@ -10,7 +10,7 @@
     margin: 0;
     background-color: black;
     color: white;
-    font-family: 'Verdana', sans-serif;
+    font-family: 'Consolas', monospace;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -25,6 +25,7 @@
     font-size: 100px;
     font-weight: bold;
     animation: blink 1s infinite;
+    margin-bottom: 20px; /* Added space between 404 and the text below */
   }
 
   @keyframes typing {
@@ -38,19 +39,19 @@
   }
 
   .message {
-    font-size: 24px;
+    font-size: 18px; /* Smaller text size */
     color: white;
-    border-right: 2px solid white;
+    border-right: 4px solid white; /* Wider cursor */
     padding: 0 10px;
     white-space: nowrap;
     overflow: hidden;
-    animation: typing 3.5s steps(40, end), blinkCursor 0.75s step-end infinite;
+    animation: typing 5s steps(40, end), blinkCursor 1s step-end infinite; /* Slower typing and blinking */
     max-width: 100%;
   }
 </style>
 </head>
 <body>
 <div class="blink">404</div>
-<div class="message">You aren't supposed to be here...</div>
+<div class="message">you aren't supposed to be here...</div>
 </body>
 </html>
