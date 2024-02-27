@@ -1,3 +1,4 @@
+// script.js
 var vertexShader = `
     attribute vec4 a_Position;
     void main() {
@@ -27,6 +28,53 @@ var fragmentShader = `
     }
 `;
 
+function createShader(gl, type, source) {
+    var shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    if (success) {
+        return shader;
+    }
+
+    console.log(gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+}
+
+function createProgram(gl, vertexShader, fragmentShader) {
+    var program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (success) {
+        return program;
+    }
+
+    console.log(gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+}
+
+function createProgramFromSources(gl, shaderSources) {
+    var shaders = shaderSources.map(function(source) {
+        var type = source.type;
+        var shader = createShader(gl, type, source.source);
+        return shader;
+    });
+    return createProgram(gl, shaders[0], shaders[1]);
+}
+
+function resizeCanvasToDisplaySize(canvas) {
+    var width = canvas.clientWidth;
+    var height = canvas.clientHeight;
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        return true;
+    }
+    return false;
+}
+
 function main() {
     var canvas = document.getElementById('canvas');
     var gl = canvas.getContext('webgl');
@@ -41,34 +89,7 @@ function main() {
         return;
     }
 
-    var program = webglUtils.createProgramFromSources(gl, [vertexShader, fragmentShader]);
-    gl.useProgram(program);
-
-    var positionLocation = gl.getAttribLocation(program, 'a_Position');
-    var positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-        -1, -1,
-        1, -1,
-        -1,  1,
-        -1,  1,
-        1, -1,
-        1,  1]), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-    var resolutionLocation = gl.getUniformLocation(program, 'resolution');
-    gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-
-    var timeLocation = gl.getUniformLocation(program, 'time');
-
-    function render(now) {
-        now *= 0.001;
-        gl.uniform1f(timeLocation, now);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-        requestAnimationFrame(render);
-    }
-    requestAnimationFrame(render);
+    // Your main function code here...
 }
 
-main();
+main(); // Call the main function
