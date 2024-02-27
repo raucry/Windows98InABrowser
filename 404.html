@@ -10,22 +10,25 @@
     margin: 0;
     background-color: black;
     color: white;
-    font-family: 'Consolas', monospace;
+    font-family: 'Segoe UI Light', sans-serif;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    padding: 20px; /* Ensure some padding around the content */
+    text-transform: lowercase; /* Make all text lowercase */
   }
 
   @keyframes blink {
+    0%, 100% { opacity: 1; }
     50% { opacity: 0; }
   }
 
   .blink {
-    font-size: 100px;
-    font-weight: bold;
+    font-size: 8vw; /* Responsive font size */
+    font-weight: normal; /* Adjusted for Segoe UI Light */
     animation: blink 1s infinite;
-    margin-bottom: 20px; /* Added space between 404 and the text below */
+    margin-bottom: 5vh; /* Responsive spacing */
   }
 
   @keyframes typing {
@@ -39,19 +42,19 @@
   }
 
   .message {
-    font-size: 18px; /* Smaller text size */
+    font-size: 2vw; /* Responsive font size */
     color: white;
-    border-right: 4px solid white; /* Wider cursor */
+    border-right: 4px solid white;
     padding: 0 10px;
     white-space: nowrap;
     overflow: hidden;
-    animation: typing 1s steps(40, end), blinkCursor 1s step-end infinite; /* Much faster typing */
+    animation: typing 1s steps(40, end), blinkCursor 1s step-end infinite;
     max-width: 100%;
   }
 </style>
 </head>
 <body>
 <div class="blink">404</div>
-<div class="message">You aren't supposed to be here...</div>
+<div class="message">you aren't supposed to be here...</div>
 </body>
 </html>
