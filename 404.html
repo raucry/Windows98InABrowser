@@ -12,6 +12,7 @@
     color: white;
     font-family: 'Verdana', sans-serif;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
   }
@@ -25,9 +26,31 @@
     font-weight: bold;
     animation: blink 1s infinite;
   }
+
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  @keyframes blinkCursor {
+    from, to { border-color: transparent; }
+    50% { border-color: white; }
+  }
+
+  .message {
+    font-size: 24px;
+    color: white;
+    border-right: 2px solid white;
+    padding: 0 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    animation: typing 3.5s steps(40, end), blinkCursor 0.75s step-end infinite;
+    max-width: 100%;
+  }
 </style>
 </head>
 <body>
 <div class="blink">404</div>
+<div class="message">You aren't supposed to be here...</div>
 </body>
 </html>
