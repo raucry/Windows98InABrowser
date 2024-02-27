@@ -1,1 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 Page</title>
+<style>
+  body, html {
+    height: 100%;
+    margin: 0;
+    background-color: black;
+    color: white;
+    font-family: 'Verdana', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  .blink {
+    font-size: 100px;
+    font-weight: bold;
+    animation: blink 1s infinite;
+  }
+</style>
+</head>
+<body>
+<div class="blink">404</div>
+</body>
+</html>
