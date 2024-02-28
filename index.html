@@ -1,67 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Your Linktree</title>
+    <title>yaoi.lgbt ~ raucry</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #2E3440;
+            background-color: #008080;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            position: relative;
         }
         .container {
-            width: 600px;
-            height: calc(100vh - 40px);
             display: flex;
             flex-wrap: wrap;
-            align-content: center;
             justify-content: center;
-            margin-bottom: 30px;
+            max-width: 800px;
+            padding: 20px;
         }
         .box {
             background-color: #C0C0C0;
+            border: 2px solid #d1d1d1;
             padding: 20px;
-            width: calc(50% - 25px);
-            height: calc((50% - 25px) / 1.85);
-            text-align: center;
+            max-width: 350px;
+            width: calc(50% - 40px);
+            margin: 0 10px 20px;
             box-sizing: border-box;
-            margin: 2.5px;
+            cursor: pointer;
+            z-index: 0;
             position: relative;
-            transition: height 0.5s ease-out;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-        }
-        .minimized {
-            height: 20px;
-            overflow: hidden;
         }
         .toolbar {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 20px;
-            background-color: #000080;
+            background: linear-gradient(to right, #d896e0 0%, #ca67d6 100%);
             color: #FFFFFF;
             display: flex;
             justify-content: space-between;
             padding: 2px;
             box-sizing: border-box;
             cursor: move;
+            border-bottom: 2px solid #888888;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
         .title {
             font-size: 12px;
             order: 1;
+            cursor: default;
         }
         .buttons {
             display: flex;
@@ -83,16 +79,6 @@
             padding: 10px;
             text-decoration: none;
         }
-        @media screen and (max-width: 640px) {
-            .container {
-                width: 90vw;
-                height: calc(100vh - 40px);
-            }
-            .box {
-                width: calc(50% - 15px);
-                height: calc((50% - 15px) / 1.85);
-            }
-        }
         .taskbar {
             position: fixed;
             bottom: 0;
@@ -101,73 +87,121 @@
             height: 30px;
             background-color: #C0C0C0;
             display: flex;
-            justify-content: start;
             align-items: center;
-            padding: 0 10px;
+            justify-content: space-between;
+            padding-left: 10px;
+            padding-right: 10px;
             box-sizing: border-box;
+            border-top: 1px solid #000000;
         }
         .start-button {
-            width: 60px;
-            height: 20px;
-            background-color: #000080;
-            color: #FFFFFF;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: #FFFFFF;
+            border: 1px solid #000000;
+            border-radius: 2px;
+            color: #000000;
+            padding: 2px 8px;
+            font-size: 12px;
             text-decoration: none;
+            text-transform: uppercase;
         }
-        .ui-dialog {
-            outline: none !important;
+        .start-button:hover {
+            background-color: #C0C0C0;
         }
-        .ui-dialog .ui-dialog-titlebar {
-            display: none;
+        .divider {
+            width: 1px;
+            height: 60%;
+            background-color: #000000;
+            margin-right: 10px;
+            margin-left: 10px;
         }
-        .ui-dialog .ui-dialog-content {
-            padding: 0;
+        .minimized-windows {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
         }
-        .ui-dialog .ui-dialog-buttonpane {
-            display: none;
+        .minimized-window {
+            background-color: #FFFFFF;
+            border: 1px solid #000000;
+            border-radius: 2px;
+            color: #000000;
+            padding: 2px 8px;
+            font-size: 12px;
+            text-decoration: none;
+            text-transform: uppercase;
+            margin-right: 5px;
         }
-        .ui-dialog .ui-resizable-se {
-            display: none;
+        .minimized-window:hover {
+            background-color: #C0C0C0;
+        }
+        .icons {
+            display: flex;
+            gap: 10px;
+        }
+        .icon {
+            width: 30px;
+            height: 30px;
+            background-color: #C0C0C0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #808080;
+        }
+        .clock {
+            font-size: 12px;
+            color: #FFFFFF;
+            margin-left: auto;
         }
     </style>
     <script>
         $(function() {
-            $(".box").each(function() {
-                var box = $(this);
-                box.dialog({
-                    minHeight: 100,
-                    minWidth: 200,
-                    create: function(event, ui) {
-                        var widget = $(this).dialog("widget");
-                        $(".ui-dialog-titlebar-close", widget).hide();
-                        $(".minimize", widget).click(function() {
-                            box.dialog("close");
-                        });
-                    }
-                });
-                $(".toolbar", box).on('mousedown', function(event) {
-                    var startX = event.clientX,
-                        startY = event.clientY,
-                        dialog = box.parent(),
-                        startLeft = dialog.offset().left,
-                        startTop = dialog.offset().top;
-                    $(document).on('mousemove', function(event) {
-                        var offsetX = event.clientX - startX,
-                            offsetY = event.clientY - startY,
-                            newLeft = startLeft + offsetX,
-                            newTop = startTop + offsetY;
-                        dialog.offset({ top: newTop, left: newLeft });
-                    });
-                    $(document).on('mouseup', function() {
-                        $(document).off('mousemove');
-                    });
-                });
-                $(".toolbar", box).on('mousedown', function(event) {
-                    event.preventDefault();
-                });
+            var minimizedWindows = [];
+
+            function minimizeWindow(event) {
+                var box = $(this).closest('.box');
+                var title = box.find('.title').text();
+                minimizedWindows.push(title);
+                box.css('visibility', 'hidden');
+                createTaskbarButton(title);
+                event.stopPropagation();
+            }
+
+            function createTaskbarButton(windowName) {
+                var button = $('<button class="minimized-window">' + windowName + '</button>');
+                $('.minimized-windows').append(button);
+            }
+
+            $('.minimize').on('click', minimizeWindow);
+
+            $(document).on('click', '.minimized-window', function() {
+                var title = $(this).text();
+                $('.box:contains("' + title + '")').css('visibility', 'visible');
+                $(this).remove();
             });
+
+            $(".box").draggable({
+                handle: ".toolbar"
+            });
+
+            $(".box").mousedown(function() {
+                var maxZIndex = Math.max.apply(null, $(".box").map(function() {
+                    return $(this).css("z-index");
+                }).get());
+                $(this).css("z-index", maxZIndex + 1);
+            });
+
+            function updateTime() {
+                var now = new Date();
+                var hours = now.getHours();
+                var ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                var minutes = now.getMinutes().toString().padStart(2, '0');
+                var timeString = hours + ':' + minutes + ' ' + ampm;
+                $(".clock").text(timeString);
+            }
+
+            updateTime();
+            setInterval(updateTime, 1000);
         });
     </script>
 </head>
@@ -181,7 +215,10 @@
             <div class="title">About Me</div>
         </div>
         <img src="5080.jpeg" alt="Photo Frame" style="width: 50px; height: 80px; margin-right: 20px;">
-        <p>Your About Me content goes here...</p>
+        <p>Name: raucry</p>
+        <p>Age: 16 (11 Feb)</p>
+        <p>Gender: Male</p>
+        <p>Pronouns: they/them</p>
     </div>
     <div class="box">
         <div class="toolbar">
@@ -213,6 +250,9 @@
 </div>
 <div class="taskbar">
     <a href="#" class="start-button">Start</a>
+    <div class="divider"></div>
+    <div class="minimized-windows"></div>
+    <div class="clock"></div>
 </div>
 </body>
 </html>
