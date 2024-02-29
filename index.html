@@ -7,6 +7,9 @@
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <style>
+        * {
+            cursor: url('files/cursor.cur'), auto;
+        }
         body {
             font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif, sans-serif;
             background-color: #938796;
@@ -14,6 +17,8 @@
             background-size: 25px 25px;
             margin: 0;
             padding: 0;
+            text-shadow: 1px 1px 1.3px #000000;
+            color: #FFFFFF;
         }
         .container {
             display: flex;
@@ -25,24 +30,33 @@
         }
         .box {
             background-color: #C0C0C0;
-            border: 2px solid #d1d1d1;
+            border-right: 2px solid #686868;
+            border-left: 2px solid #E5E5E5;
+            border-top: 2px solid #E5E5E5;
+            border-bottom: 2px solid #686868;
             padding: 20px;
             width: calc(50% - 40px);
             margin: 10px;
             box-sizing: border-box;
-            cursor: pointer;
+            cursor: url('files/cursor.cur'), auto;
             z-index: 0;
             position: relative;
             max-width: 400px;
         }
+        .box p {
+            font-size: 13px;
+            position: relative;
+            top: 2px;
+            left: 55px;
+            line-height: 1.3;
+        }
         .toolbar {
             width: 100%;
-            height: 20px;
-            background: linear-gradient(to right, #d896e0 0%, #ca67d6 100%);
-            color: #FFFFFF;
+            height: 23px;
+            background: linear-gradient(to right, #e3abe9 0%, #ed76fa 100%);
             display: flex;
             justify-content: space-between;
-            padding: 2px;
+            padding: 4px;
             box-sizing: border-box;
             cursor: move;
             border-bottom: 2px solid #888888;
@@ -51,10 +65,12 @@
             left: 0;
             z-index: 1;
         }
+        a:hover, button:hover {
+            background-color: #AFAFAF;
+        }
         .title {
             font-size: 12px;
             order: 1;
-            cursor: default;
             padding-left: 1px;
         }
         .buttons {
@@ -71,16 +87,29 @@
             width: 12px;
             height: 12px;
             background-color: #C0C0C0;
-            border: 1px solid #808080;
+            border-right: 2px solid #686868;
+            border-left: 2px solid #E5E5E5;
+            border-top: 2px solid #E5E5E5;
+            border-bottom: 2px solid #686868;
             box-sizing: border-box;
         }
         .link {
+            position: relative;
+            right: -5px;
+            top: 5px;
             display: inline-block;
+            margin-top: 5px;
             margin-right: 5px;
         }
         .link img {
             width: 30px;
             height: auto;
+        }
+        .taskbar button {
+            background-color: #C0C0C0;
+        }
+        .taskbar button:hover {
+            background-color: #AFAFAF;
         }
         .taskbar {
             position: fixed;
@@ -95,21 +124,30 @@
             padding-left: 10px;
             padding-right: 10px;
             box-sizing: border-box;
-            border-top: 1px solid #000000;
+            border-top: 1px solid #2c2c2c;
             z-index: 2;
         }
         .start-button {
-            background-color: #FFFFFF;
-            border: 1px solid #000000;
-            border-radius: 2px;
+            background-color: #C0C0C0;
+            border-right: 2px solid #686868;
+            border-left: 2px solid #E5E5E5;
+            border-top: 2px solid #E5E5E5;
+            border-bottom: 2px solid #686868;
             color: #000000;
-            padding: 2px 8px;
+            padding: 2px 10px;
             font-size: 12px;
-            text-decoration: none;
-            text-transform: uppercase;
+            font-weight: bold;
+            text-decoration: none; 
+        }
+        .start-button::before {
+            content: url('files/windows.png');
+            padding-right: 2px;
+            position: relative;
+            top: 1px;
+            right: 2px;
         }
         .start-button:hover {
-            background-color: #C0C0C0;
+            background-color: #AFAFAF;
         }
         .divider {
             width: 1px;
@@ -125,7 +163,10 @@
         }
         .minimized-window {
             background-color: #FFFFFF;
-            border: 1px solid #000000;
+            border-right: 2px solid #686868;
+            border-left: 2px solid #E5E5E5;
+            border-top: 2px solid #E5E5E5;
+            border-bottom: 2px solid #686868;
             border-radius: 2px;
             color: #000000;
             padding: 2px 8px;
@@ -148,7 +189,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid #808080;
+            border-right: 2px solid #686868;
+            border-left: 2px solid #E5E5E5;
+            border-top: 2px solid #E5E5E5;
+            border-bottom: 2px solid #686868;
         }
         .clock {
             font-size: 12px;
@@ -167,7 +211,20 @@
         }
         .box img {
             top: 25px;
-            border: 2px solid #000;
+            border-right: 2px solid #686868;
+            border-left: 2px solid #E5E5E5;
+            border-top: 2px solid #E5E5E5;
+            border-bottom: 2px solid #686868;
+        }
+        .minimize::before {
+            content: "_";
+            position: relative;
+            top: -10px;
+            left: 1px;
+            text-shadow: none;
+            color: #1d1d1d;
+            font-size: 10px;
+            font-weight: bold;
         }
     </style>
     <script>
@@ -233,7 +290,7 @@
             <div class="title">About Me</div>
         </div>
         <img src="files/5080.jpeg" alt="Photo Frame" style="position: absolute; top: 35px; left: 15px; width: 50px; height: 80px; margin-right: 20px;">
-        <p>ㅤㅤㅤㅤwork in progress</p>
+        <p>Name: raucry<br>Age: 16 (11 Feb)<br>Gender: Male<br>Pronouns: They/Them<br>Timezone: UTC+2 (Bucharest)</p>
     </div>
     <div class="box" style="height: 120px; margin-top: 10px;">
         <div class="toolbar">
@@ -243,8 +300,14 @@
             <div class="title">Links</div>
         </div>
         <a href="https://twitter.com/raucry" class="link"><img src="files/twitter.png" alt="Twitter"></a>
-        <a href="https://open.spotify.com/user/zf4qz71qk7vr445rm068p3ooh?si=cff9825f4d5f4fac" class="link"><img src="files/spotify.png" alt="Spotify"></a>
+        <a href="https://open.spotify.com/user/zf4qz71qk7vr445rm068p3ooh" class="link"><img src="files/spotify.png" alt="Spotify"></a>
         <a href="https://pinterest.co.uk/raucry" class="link"><img src="files/pinterest.png" alt="Pinterest"></a>
+        <a href="https://pinterest.co.uk/raucry" class="link"><img src="files/stats.fm.png" alt="Stats.fm"></a>
+        <a href="https://pinterest.co.uk/raucry" class="link"><img src="files/steam.png" alt="Steam"></a>
+        <a href="https://pinterest.co.uk/raucry" class="link"><img src="files/github.png" alt="Github"></a>
+        <a href="https://pinterest.co.uk/raucry" class="link"><img src="files/flipd.png" alt="Flipd"></a>
+        <a href="https://pinterest.co.uk/raucry" class="link"><img src="files/tiktok.png" alt="TikTok"></a>
+        <a href="https://pinterest.co.uk/raucry" class="link"><img src="files/youtube.png" alt="YouTube"></a>
     </div>
     <div class="box" style="height: 385px;">
         <div class="toolbar">
