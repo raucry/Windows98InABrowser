@@ -1,60 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>404 Page</title>
-<style>
-  body, html {
-    height: 100%;
-    margin: 0;
-    background-color: black;
-    color: white;
-    font-family: 'Mistral', sans-serif;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 20px; /* Ensure some padding around the content */
-    text-transform: lowercase; /* Make all text lowercase */
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-
-  .blink {
-    font-size: 8vw; /* Responsive font size */
-    font-weight: normal; /* Adjusted for Segoe UI Light */
-    animation: blink 1s infinite;
-    margin-bottom: 5vh; /* Responsive spacing */
-  }
-
-  @keyframes typing {
-    from { width: 0; }
-    to { width: 100%; }
-  }
-
-  @keyframes blinkCursor {
-    from, to { border-color: transparent; }
-    50% { border-color: white; }
-  }
-
-  .message {
-    font-size: 2vw; /* Responsive font size */
-    color: white;
-    border-right: 4px solid white;
-    padding: 0 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    animation: typing 1s steps(40, end), blinkCursor 1s step-end infinite;
-    max-width: 100%;
-  }
-</style>
+    <title>Blue Screen of Death</title>
+    <style>
+        body {
+            background-color: #0000AA;
+            color: #FFFFFF;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 20px;
+        }
+    </style>
 </head>
 <body>
-<div class="blink">404</div>
-<div class="message">you aren't supposed to be here...</div>
+    <pre>
+A problem has been detected and Windows has been shut down to prevent damage
+to your computer.
+
+The problem seems to be caused by the following file: BUSSY_FOR_BEGINNERS.MP4
+
+404_PAGE_NOT_FOUND
+
+If this is the first time you've seen this stop error screen,
+restart your computer. If this screen appears again, follow
+these steps:
+
+Check to make sure any new hardware or software is properly installed.
+If this is a new installation, ask your hardware or software manufacturer
+for any Windows updates you might need.
+
+If problems continue, disable or remove any newly installed hardware
+or software. Disable BIOS memory options such as caching or shadowing.
+If you need to use Safe Mode to remove or disable components, restart
+your computer, press F8 to select Advanced Startup Options, and then
+select Safe Mode.
+
+Technical information:
+
+*** STOP: 0x00000050 (0xFD3094C2,0x00000001,0xFBFE7617,0x00000000)
+
+*** B0Y5!OV3.SYS - Address FBFE7617 base at FBFE5000, DateStamp 3d6dd67c
+    </pre>
 </body>
 </html>
