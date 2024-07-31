@@ -1,0 +1,104 @@
+body {
+    background-color: black;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.black-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    z-index: 1000;
+    animation: fadeOut 1s ease-in-out 600ms forwards;
+    pointer-events: none;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; visibility: hidden; }
+}
+
+.background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    animation: fadeIn 1s ease-in-out 600ms;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.background-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+header {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 2vh 0;
+    background-color: transparent;
+    border-bottom: none;
+}
+
+.logo-box {
+    padding: 2vh;
+    display: inline-block;
+    border-radius: 1vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+header img {
+    max-width: 15vh;
+    width: 100%;
+    height: auto;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: left;
+}
+
+h2 {
+    font-weight: 300;
+    font-size: 3em !important;
+}
+
+.button {
+    display: inline-block;
+    padding: 0.5em 1em;
+    margin: 0.5em 0;
+    border: 1px solid white;
+    background-color: white;
+    border-radius: 1vh;
+    font-weight: 600;
+    color: black;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    text-decoration: none;
+}

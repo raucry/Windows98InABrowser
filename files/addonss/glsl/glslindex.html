@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<!-- saved from url=(0034)https://glslsandbox.com/e#107546.0 -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>GLSL Sandbox</title>
+		
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+		<style>
+
+			* {
+				box-sizing: border-box;
+			}
+
+			html {
+				height: 100%;
+				overflow: hidden; /* Prevents scrolling */
+    			height: 100%; /* Ensures the body takes the full height of the viewport */
+    			margin: 0; /* Removes default margin */
+    			padding: 0; /* Removes default padding */
+			}
+
+			body {
+				background-color: #000000;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+
+			canvas {
+				display: block;
+				width: 100%;
+				height: 100%;
+				touch-action: none;
+				image-rendering: pixelated;
+			}
+
+			button, select, a, a:visited {
+				padding: 8px 12px;
+
+				border: 0px;
+				border-radius: 5px;
+				margin-right: 5px;
+
+				color: #ffffff00;
+				background-color: #00000000;
+
+				font-family: monospace;
+				font-size: 11px;
+
+				cursor: pointer;
+				text-decoration: none;
+
+				text-transform: uppercase;
+			}
+
+			button:hover, select:hover, a:hover {
+				background-color: #ffffff00;
+				color: #00000000;
+			}
+
+			img {
+				padding: 4px;
+				border: 0px;
+				border-radius: 5px;
+				margin-right: 5px;
+
+				background-color: #000000;
+				vertical-align: middle;
+
+				cursor: pointer;
+			}
+
+				img:hover {
+					background-color: #ffffff00;
+				}
+
+			option {
+				color: #ffffff;
+				background-color: #000000;
+			}
+
+			#toolbar {
+				transition: opacity 1s;
+			}
+
+		</style>
+	</head>
+	<body style="cursor: none;">
+
+		<link rel="stylesheet" href="./GLSL Sandbox_files/codemirror.css">
+		<link rel="stylesheet" href="./GLSL Sandbox_files/default.css">
+
+		<script src="./GLSL Sandbox_files/lzma.js.download"></script>
+		<script src="./GLSL Sandbox_files/jquery.js.download"></script>
+		<script src="./GLSL Sandbox_files/helpers.js.download"></script>
+		<script src="./GLSL Sandbox_files/codemirror.js.download"></script>
+		<script src="./GLSL Sandbox_files/glsl.js.download"></script>
+
+		<script id="example" type="x-shader/x-fragment">#extension GL_OES_standard_derivatives : enable
+
+			precision highp float;
+			uniform float time;
+			uniform vec2 resolution;
+			uniform sampler2D texture;
+			#define iGlobalTime time
+			#define iTime time
+			#define iResolution resolution.xy
+			
+			mat2 mm2(in float a){float c = cos(a), s = sin(a);return mat2(c,s,-s,c);}
+			mat2 m2 = mat2(0.0, 0.29552, -0.0, 0.0);
+			float tri(in float x){return clamp(abs(fract(x)-.0),0.00,0.49);}
+			vec2 tri2(in vec2 p){return vec2(tri(p.x)+tri(p.y),tri(p.y+tri(p.x)));}
+			
+			float triNoise2d(in vec2 p, float spd)
+			{
+				float z=1.8;
+				float z2=2.5;
+				float rz = 0.;
+				p *= mm2(p.x*0.06);
+				vec2 bp = p;
+				for (float i=0.; i<5.; i++ )
+				{
+					vec2 dg = tri2(bp*1.85)*.75;
+					dg *= mm2(time * 10.*spd);
+					p -= dg/z2;
+			
+					bp *= 1.3;
+					z2 *= .45;
+					z *= .42;
+					p *= 1.21 + (rz-1.0)*.02;
+			
+					rz += tri(p.x+tri(p.y))*z;
+					p*= -m2;
+				}
+				return clamp(1./pow(rz*29., 1.3),0.,.55);
+			}
+			
+			float hash21(in vec2 n){ return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453); }
+			vec4 aurora(vec3 ro, vec3 rd)
+			{
+				vec4 col = vec4(0);
+				vec4 avgCol = vec4(0);
+			
+				for(float i=0.;i<50.;i++)
+				{
+					float of = 0.006*hash21(gl_FragCoord.xy)*smoothstep(0.,15., i);
+					float pt = ((.8+pow(i,1.4)*.002)-ro.y)/(rd.y*2.+0.4);
+					pt -= of;
+					vec3 bpos = ro + pt*rd;
+					vec2 p = bpos.zx;
+					float rzt = triNoise2d(p, 0.06);
+					vec4 col2 = vec4(0,0,0, rzt);
+					col2.rgb = (sin(1.-vec3(2.15,-.5, 1.2)+i*0.043)*0.5+0.5)*rzt;
+					avgCol =  mix(avgCol, col2, .5);
+					col += avgCol*exp2(-i*0.065 - 2.5)*smoothstep(0.,5., i);
+				}
+			
+				col *= (clamp(rd.y*15.+.4,0.,1.));
+			
+				return col*1.8;
+			}
+			
+			vec3 hash33(vec3 p)
+			{
+				p = fract(p * vec3(443.8975,397.2973, 491.1871));
+				p += dot(p.zxy, p.yxz+19.27);
+				return fract(vec3(p.x * p.y, p.z*p.x, p.y*p.z));
+			}
+			
+			vec3 stars(in vec3 p)
+			{
+				vec3 c = vec3(0.);
+				float res = iResolution.x*1.;
+			
+				for (float i=0.;i<4.;i++)
+				{
+					vec3 q = fract(p*(.15*res))-0.5;
+					vec3 id = floor(p*(.15*res));
+					vec2 rn = hash33(id).xy;
+					float c2 = 1.-smoothstep(0.,.6,length(q));
+					c2 *= step(rn.x,.0005+i*i*0.001);
+					c += c2*(mix(vec3(1.0,0.49,0.1),vec3(0.75,0.9,1.),rn.y)*0.1+0.9);
+					p *= 1.3;
+				}
+				return c*c*.8;
+			}
+			
+			vec3 bg(in vec3 rd)
+			{
+				float sd = dot(normalize(vec3(-0.5, -0.6, 0.9)), rd)*0.5+0.5;
+				sd = pow(sd, 5.);
+				vec3 col = mix(vec3(0.05,0.1,0.2), vec3(0.1,0.05,0.2), sd);
+				return col*.63;
+			}
+			
+			void mainImage( out vec4 fragColor, in vec2 fragCoord )
+			{
+				vec2 q = fragCoord.xy / iResolution.xy;
+				vec2 p = q - 0.5;
+				p.x*=iResolution.x/iResolution.y;
+			
+				vec3 ro = vec3(0,0,-6.7);
+				vec3 rd = normalize(vec3(p,1.3));
+				rd.xz *= mm2(sin(time*0.05)*0.2);
+			
+				vec3 col = vec3(0.);
+				vec3 brd = rd;
+				float fade = smoothstep(0.,0.01,abs(brd.y))*0.1+0.9;
+			
+				col = bg(rd)*fade;
+			
+				if (rd.y > 0.){
+					vec4 aur = smoothstep(0.,1.5,aurora(ro,rd))*fade;
+					col += stars(rd);
+					col = col*(1.-aur.a) + aur.rgb;
+				}
+				else //Reflections
+				{
+					rd.y = abs(rd.y);
+					col = bg(rd)*fade*0.6;
+					vec4 aur = smoothstep(0.0,2.5,aurora(ro,rd));
+					col += stars(rd)*0.1;
+					col = col*(1.-aur.a) + aur.rgb;
+					vec3 pos = ro + ((0.5-ro.y)/rd.y)*rd;
+					float nz2 = triNoise2d(pos.xz*vec2(.5,.7), 0.);
+					col += mix(vec3(0.2,0.25,0.5)*0.08,vec3(0.3,0.3,0.5)*0.7, nz2*0.4);
+				}
+			
+				fragColor = vec4(col, 1);
+			}
+			
+			void main( void ) {
+				vec4 colo = vec4(0.0);
+				mainImage(colo, gl_FragCoord.xy);
+				gl_FragColor = colo;
+			}
+			
+</script>
+
+		<script id="fragmentShader" type="x-shader/x-fragment">
+
+			precision highp float;
+
+			uniform vec2 resolution;
+			uniform sampler2D texture;
+
+			void main() {
+
+				vec2 uv = gl_FragCoord.xy / resolution.xy;
+				gl_FragColor = texture2D( texture, uv );
+
+			}
+
+		</script>
+
+		<script id="vertexShader" type="x-shader/x-vertex">
+
+			attribute vec3 position;
+
+			void main() {
+
+				gl_Position = vec4( position, 1.0 );
+
+			}
+
+		</script>
+
+		<script id="surfaceVertexShader" type="x-shader/x-vertex">
+
+			attribute vec3 position;
+			attribute vec2 surfacePosAttrib;
+			varying vec2 surfacePosition;
+
+			void main() {
+
+				surfacePosition = surfacePosAttrib;
+				gl_Position = vec4( position, 1.0 );
+
+			}
+
+		</script>
+
+		<script>
+
+			initialize_helper();
+
+			var compressor = initialize_compressor();
+
+			// Greetings to Iq/RGBA! ;)
+
+			var quality = 1, quality_levels = [ 1, 2, 4, 8 ];
+			var toolbar, showButton, timeButton, compileButton, panButton, compileTimer, errorLines = [];
+			var code, canvas, gl, buffer, currentProgram, vertexPosition, screenVertexPosition,
+			parameters = { startTime: Date.now(), time: 0, mouseX: 0.5, mouseY: 0.5, screenWidth: 0, screenHeight: 0 },
+			surface = { centerX: 0, centerY: 0, width: 1, height: 1, isPanning: false, isZooming: false, lastX: 0, lastY: 0 },
+			frontTarget, backTarget, screenProgram, getWebGL, compileOnChangeCode = true;
+
+			init();
+
+			if ( gl ) animate();
+
+			function init() {
+
+				canvas = document.createElement( 'canvas' );
+				document.body.appendChild( canvas );
+
+				//
+
+				toolbar = document.createElement( 'div' );
+				toolbar.id = 'toolbar';
+				toolbar.style.position = 'absolute';
+				toolbar.style.top = '0px';
+				toolbar.style.padding = '25px';
+				toolbar.style.paddingTop = 'max(25px, env(safe-area-inset-top))'; // handle hole-punch camera & notch
+				toolbar.style.width = '100%';
+				document.body.appendChild( toolbar );
+
+				var rightside = document.createElement( 'div' );
+				rightside.style.cssFloat = 'right';
+				toolbar.appendChild( rightside );
+
+				panButton = document.createElement( 'button' );
+				panButton.textContent = 'pan/zoom';
+				panButton.style.cursor = 'move';
+				panButton.style.display = 'none';
+				panButton.title = "Pan: left-drag, Zoom: right-drag. Use 'hide code' for a large pan/zoom area.";
+				rightside.appendChild( panButton );
+
+				var button = document.createElement( 'a' );
+
+				if ( document.referrer.startsWith( 'https://glslsandbox.com/' ) ) {
+
+					button.href = 'javascript:window.history.go( -1 )';
+
+				} else {
+
+					button.href = '/';
+
+				}
+
+				rightside.appendChild( button );
+
+				showButton = document.createElement( 'button' );
+				showButton.textContent = 'show code';
+				showButton.addEventListener( 'click', function () {
+
+					isCodeVisible() ? hideCode() : showCode();
+
+				}, false );
+				toolbar.appendChild( showButton );
+
+				timeButton = document.createElement( 'button' );
+				timeButton.textContent = '0:00.00';
+				timeButton.addEventListener( 'click', function ( event ) {
+
+					parameters.startTime = Date.now();
+
+				}, false );
+				toolbar.appendChild( timeButton );
+
+				var select = document.createElement( 'select' );
+
+				for ( var i = 0; i < quality_levels.length; i ++ ) {
+
+					var option = document.createElement( 'option' );
+					option.textContent = quality_levels[ i ] + 'x';
+					if ( quality_levels[ i ] == quality ) option.selected = true;
+					select.appendChild( option );
+
+				}
+
+				select.addEventListener( 'change', function ( event ) {
+
+					quality = quality_levels[ event.target.selectedIndex ];
+					onWindowResize();
+
+				}, false );
+
+				toolbar.appendChild( select );
+
+				compileButton = document.createElement( 'button' );
+				compileButton.textContent = 'compiled';
+				compileButton.addEventListener( 'click', function ( event ) {
+
+					compile();
+
+				}, false );
+				toolbar.appendChild( compileButton );
+
+				// from helper.js
+				add_server_buttons();
+
+				// Initialise WebGL
+
+				try {
+
+					gl = canvas.getContext( 'webgl', { antialias: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: true } );
+
+				} catch( error ) { }
+
+				if ( gl ) {
+
+					// enable dFdx, dFdy, fwidth
+					gl.getExtension( 'OES_standard_derivatives' );
+
+					// Create vertex buffer (2 triangles)
+
+					buffer = gl.createBuffer();
+					gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
+					gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( [ - 1.0, - 1.0, 1.0, - 1.0, - 1.0, 1.0, 1.0, - 1.0, 1.0, 1.0, - 1.0, 1.0 ] ), gl.STATIC_DRAW );
+
+					// Create surface buffer (coordinates at screen corners)
+
+					surface.buffer = gl.createBuffer();
+
+				} else {
+
+					alert( 'WebGL not supported, but code will be shown.' );
+
+				}
+
+				// initialize code editor
+				code = CodeMirror(document.body, {
+					lineNumbers: true,
+					matchBrackets: true,
+					indentWithTabs: true,
+					tabSize: 8,
+					indentUnit: 8,
+					mode: "text/x-glsl",
+					onChange: function () {
+						if (compileOnChangeCode) {
+							clearTimeout(compileTimer);
+							compileTimer = setTimeout(compile, 500);
+						}
+					}
+				});
+
+				if (gl) {
+
+					var surfaceMouseDown = function ( event ) {
+
+						if (event.shiftKey) {
+							resetSurface();
+						}
+
+						if (event.button === 0) {
+							surface.isPanning = true;
+							document.body.style.cursor = 'move';
+						} else {
+							surface.isZooming = true;
+							document.body.style.cursor = 'se-resize';
+							panButton.style.cursor = 'se-resize';
+						}
+
+						surface.lastX = event.clientX;
+						surface.lastY = event.clientY;
+						event.preventDefault();
+
+					};
+
+					var noContextMenu = function ( event ) {
+
+						event.preventDefault();
+
+					};
+
+					canvas.addEventListener( 'mousedown', surfaceMouseDown, false );
+					panButton.addEventListener( 'mousedown', surfaceMouseDown, false );
+
+					canvas.addEventListener( 'contextmenu', noContextMenu, false );
+					panButton.addEventListener( 'contextmenu', noContextMenu, false );
+
+				}
+
+				var clientXLast, clientYLast;
+
+				document.addEventListener( 'pointermove', function ( event ) {
+
+					var clientX = event.clientX;
+					var clientY = event.clientY;
+
+					if (clientXLast == clientX && clientYLast == clientY)
+						return;
+
+					clientXLast = clientX;
+					clientYLast = clientY;
+
+					stopHideUI();
+
+					var codeElement, dx, dy;
+
+					parameters.mouseX = clientX / window.innerWidth;
+					parameters.mouseY = 1 - clientY / window.innerHeight;
+
+					if (surface.isPanning) {
+
+						dx = clientX - surface.lastX;
+						dy = clientY - surface.lastY;
+						surface.centerX -= dx * surface.width / window.innerWidth;
+						surface.centerY += dy * surface.height / window.innerHeight;
+						surface.lastX = clientX;
+						surface.lastY = clientY;
+						computeSurfaceCorners();
+						event.preventDefault();
+
+					} else if (surface.isZooming) {
+
+						dx = clientX - surface.lastX;
+						dy = clientY - surface.lastY;
+						surface.height *= Math.pow(0.997, dx + dy);
+						surface.lastX = clientX;
+						surface.lastY = clientY;
+						computeSurfaceCorners();
+						event.preventDefault();
+
+					}
+
+				}, false );
+
+				function settleDown ( event ) {
+					surface.isPanning = surface.isZooming = false;
+					document.body.style.cursor = 'default';
+					panButton.style.cursor = 'move';
+				}
+
+				function mouseLeave(event) {
+					settleDown(event);
+
+					if (!isCodeVisible())
+						startHideUITimer();
+				}
+
+				document.addEventListener( 'mouseup', settleDown, false );
+				document.addEventListener( 'mouseleave', mouseLeave, false );
+
+				onWindowResize();
+				window.addEventListener( 'resize', onWindowResize, false );
+				load_url_code();
+
+				compileScreenProgram();
+
+				// show code when is new effect
+
+				location.hash === '' ? hideCode() : hideCode();
+
+			}
+
+			function hideCode() {
+
+				showButton.textContent = 'show code';
+				code.getWrapperElement().style.visibility = 'hidden';
+				compileButton.style.visibility = 'hidden';
+				set_save_button('hidden');
+				set_parent_button('hidden');
+				stopHideUI();
+
+			}
+
+			function isCodeVisible() {
+
+				return code && code.getWrapperElement().style.visibility === 'visible';
+
+			}
+
+			var hideUITimer;
+			var isUIHidden = false;
+
+			function startHideUITimer () {
+
+				stopHideUITimer();
+				if (!isUIHidden && !isCodeVisible())
+					hideUITimer = window.setTimeout(onHideUITimer, 1000 * 3 );
+
+				function onHideUITimer() {
+
+					stopHideUITimer();
+					if (!isUIHidden && !isCodeVisible()) {
+
+						isUIHidden = true;
+						toolbar.style.opacity = '0';
+						document.body.style.cursor = 'none';
+					}
+				}
+
+				function stopHideUITimer () {
+
+					if (hideUITimer) {
+
+						window.clearTimeout(hideUITimer);
+						hideUITimer = 0;
+					}
+				}
+			}
+
+			function stopHideUI () {
+
+				if (isUIHidden) {
+
+					isUIHidden = false;
+					toolbar.style.opacity = '1';
+					document.body.style.cursor = '';
+				}
+				startHideUITimer();
+			}
+
+
+			function computeSurfaceCorners() {
+
+				if (gl) {
+
+					surface.width = surface.height * parameters.screenWidth / parameters.screenHeight;
+
+					var halfWidth = surface.width * 0.5, halfHeight = surface.height * 0.5;
+
+					gl.bindBuffer( gl.ARRAY_BUFFER, surface.buffer );
+					gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( [
+						surface.centerX - halfWidth, surface.centerY - halfHeight,
+						surface.centerX + halfWidth, surface.centerY - halfHeight,
+						surface.centerX - halfWidth, surface.centerY + halfHeight,
+						surface.centerX + halfWidth, surface.centerY - halfHeight,
+						surface.centerX + halfWidth, surface.centerY + halfHeight,
+						surface.centerX - halfWidth, surface.centerY + halfHeight ] ), gl.STATIC_DRAW );
+
+				}
+
+			}
+
+			function resetSurface() {
+
+				surface.centerX = surface.centerY = 0;
+				surface.height = 1;
+				computeSurfaceCorners();
+
+			}
+
+			function compile() {
+
+				if (!gl) {
+
+					if (!getWebGL) {
+
+						getWebGL = true;
+						compileButton.addEventListener( 'click', function ( event ) {
+
+							document.location = 'http://get.webgl.org/';
+
+						}, false );
+						compileButton.title = 'http://get.webgl.org/';
+						compileButton.style.color = '#ff0000';
+						compileButton.textContent = 'WebGL not supported!';
+						set_save_button('hidden');
+
+					}
+					return;
+
+				}
+
+				var program = gl.createProgram();
+				var fragment = code.getValue();
+				var vertex = document.getElementById( 'surfaceVertexShader' ).textContent;
+
+				var vs = createShader( vertex, gl.VERTEX_SHADER );
+				var fs = createShader( fragment, gl.FRAGMENT_SHADER );
+
+				if ( vs == null || fs == null ) return null;
+
+				gl.attachShader( program, vs );
+				gl.attachShader( program, fs );
+
+				gl.deleteShader( vs );
+				gl.deleteShader( fs );
+
+				gl.linkProgram( program );
+
+				if ( !gl.getProgramParameter( program, gl.LINK_STATUS ) ) {
+
+					showCode();
+
+					var error = gl.getProgramInfoLog( program );
+
+					compileButton.title = error;
+					console.error( error );
+
+					console.error( 'VALIDATE_STATUS: ' + gl.getProgramParameter( program, gl.VALIDATE_STATUS ), 'ERROR: ' + gl.getError() );
+					compileButton.style.color = '#ff0000';
+					compileButton.textContent = 'errors';
+
+					set_save_button('hidden');
+
+					return;
+
+				}
+
+				if ( currentProgram ) {
+
+					gl.deleteProgram( currentProgram );
+					setURL( fragment );
+
+				}
+
+				currentProgram = program;
+
+				compileButton.style.color = '#00ff00';
+				compileButton.textContent = 'compiled';
+
+				set_save_button( 'visible' );
+
+				panButton.style.display = fragment.indexOf( 'varying vec2 surfacePosition;' ) >= 0 ? 'inline' : 'none';
+
+				// Cache uniforms
+
+				cacheUniformLocation( program, 'time' );
+				cacheUniformLocation( program, 'mouse' );
+				cacheUniformLocation( program, 'resolution' );
+				cacheUniformLocation( program, 'backbuffer' );
+				cacheUniformLocation( program, 'surfaceSize' );
+
+				// Load program into GPU
+
+				gl.useProgram( currentProgram );
+
+				// Set up buffers
+
+				surface.positionAttribute = gl.getAttribLocation( currentProgram, "surfacePosAttrib" );
+				gl.enableVertexAttribArray( surface.positionAttribute );
+
+				vertexPosition = gl.getAttribLocation( currentProgram, "position" );
+				gl.enableVertexAttribArray( vertexPosition );
+
+			}
+
+			function compileScreenProgram() {
+
+				if (!gl) { return; }
+
+				var program = gl.createProgram();
+				var fragment = document.getElementById( 'fragmentShader' ).textContent;
+				var vertex = document.getElementById( 'vertexShader' ).textContent;
+
+				var vs = createShader( vertex, gl.VERTEX_SHADER );
+				var fs = createShader( fragment, gl.FRAGMENT_SHADER );
+
+				gl.attachShader( program, vs );
+				gl.attachShader( program, fs );
+
+				gl.deleteShader( vs );
+				gl.deleteShader( fs );
+
+				gl.linkProgram( program );
+
+				if ( !gl.getProgramParameter( program, gl.LINK_STATUS ) ) {
+
+					showCode();
+
+					console.error( 'VALIDATE_STATUS: ' + gl.getProgramParameter( program, gl.VALIDATE_STATUS ), 'ERROR: ' + gl.getError() );
+
+					return;
+
+				}
+
+				screenProgram = program;
+
+				gl.useProgram( screenProgram );
+
+				cacheUniformLocation( program, 'resolution' );
+				cacheUniformLocation( program, 'texture' );
+
+				screenVertexPosition = gl.getAttribLocation( screenProgram, "position" );
+				gl.enableVertexAttribArray( screenVertexPosition );
+
+			}
+
+			function cacheUniformLocation( program, label ) {
+
+				if ( program.uniformsCache === undefined ) {
+
+					program.uniformsCache = {};
+
+				}
+
+				program.uniformsCache[ label ] = gl.getUniformLocation( program, label );
+
+			}
+
+			//
+
+			function createTarget( width, height ) {
+
+				var target = {};
+
+				target.framebuffer = gl.createFramebuffer();
+				target.renderbuffer = gl.createRenderbuffer();
+				target.texture = gl.createTexture();
+
+				// set up framebuffer
+
+				gl.bindTexture( gl.TEXTURE_2D, target.texture );
+				gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null );
+
+				gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE );
+				gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE );
+
+				gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+				gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
+
+				gl.bindFramebuffer( gl.FRAMEBUFFER, target.framebuffer );
+				gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, target.texture, 0 );
+
+				// set up renderbuffer
+
+				gl.bindRenderbuffer( gl.RENDERBUFFER, target.renderbuffer );
+
+				gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height );
+				gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, target.renderbuffer );
+
+				// clean up
+
+				gl.bindTexture( gl.TEXTURE_2D, null );
+				gl.bindRenderbuffer( gl.RENDERBUFFER, null );
+				gl.bindFramebuffer( gl.FRAMEBUFFER, null);
+
+				return target;
+
+			}
+
+			function createRenderTargets() {
+
+				frontTarget = createTarget( parameters.screenWidth, parameters.screenHeight );
+				backTarget = createTarget( parameters.screenWidth, parameters.screenHeight );
+
+			}
+
+			//
+
+			var dummyFunction = function() {};
+
+
+			//
+
+			function htmlEncode(str){
+
+				return String(str)
+					.replace(/&/g, '&amp;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#39;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;');
+
+			}
+
+			//
+
+			function createShader( src, type ) {
+
+				var shader = gl.createShader( type );
+				var line, lineNum, lineError, index = 0, indexEnd;
+
+				while (errorLines.length > 0) {
+					line = errorLines.pop();
+					code.setLineClass(line, null);
+					code.clearMarker(line);
+				}
+
+				gl.shaderSource( shader, src );
+				gl.compileShader( shader );
+
+				compileButton.title = '';
+
+				if ( !gl.getShaderParameter( shader, gl.COMPILE_STATUS ) ) {
+
+					showCode();
+
+					var error = gl.getShaderInfoLog( shader );
+
+					// Remove trailing linefeed, for FireFox's benefit.
+					while ((error.length > 1) && (error.charCodeAt(error.length - 1) < 32)) {
+						error = error.substring(0, error.length - 1);
+					}
+
+					compileButton.title = error;
+					console.error( error );
+
+					compileButton.style.color = '#ff0000';
+					compileButton.textContent = 'errors';
+
+					set_save_button('hidden');
+
+					while (index >= 0) {
+						index = error.indexOf("ERROR: 0:", index);
+						if (index < 0) { break; }
+						index += 9;
+						indexEnd = error.indexOf(':', index);
+						if (indexEnd > index) {
+							lineNum = parseInt(error.substring(index, indexEnd));
+							if ((!isNaN(lineNum)) && (lineNum > 0)) {
+								index = indexEnd + 1;
+								indexEnd = error.indexOf("ERROR: 0:", index);
+								lineError = htmlEncode((indexEnd > index) ? error.substring(index, indexEnd) : error.substring(index));
+								line = code.setMarker(lineNum - 1, '<abbr title="' + lineError + '">' + lineNum + '</abbr>', "errorMarker");
+								code.setLineClass(line, "errorLine");
+								errorLines.push(line);
+							}
+						}
+					}
+
+					return null;
+
+				}
+
+				return shader;
+
+			}
+
+			//
+
+			function onWindowResize( event ) {
+
+				canvas.width = window.innerWidth / quality;
+				canvas.height = window.innerHeight / quality;
+
+				parameters.screenWidth = canvas.width;
+				parameters.screenHeight = canvas.height;
+
+				computeSurfaceCorners();
+
+				if ( gl ) {
+
+					gl.viewport( 0, 0, canvas.width, canvas.height );
+
+					createRenderTargets();
+
+				}
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				render();
+
+			}
+
+			function render() {
+
+				if ( !currentProgram ) return;
+
+				parameters.time = Date.now() - parameters.startTime;
+
+				timeButton.textContent = parseTime( parameters.time );
+
+				// Set uniforms for custom shader
+
+				gl.useProgram( currentProgram );
+
+				gl.uniform1f( currentProgram.uniformsCache[ 'time' ], parameters.time / 1000 );
+				gl.uniform2f( currentProgram.uniformsCache[ 'mouse' ], parameters.mouseX, parameters.mouseY );
+				gl.uniform2f( currentProgram.uniformsCache[ 'resolution' ], parameters.screenWidth, parameters.screenHeight );
+				gl.uniform1i( currentProgram.uniformsCache[ 'backbuffer' ], 0 );
+				gl.uniform2f( currentProgram.uniformsCache[ 'surfaceSize' ], surface.width, surface.height );
+
+				gl.bindBuffer( gl.ARRAY_BUFFER, surface.buffer );
+				gl.vertexAttribPointer( surface.positionAttribute, 2, gl.FLOAT, false, 0, 0 );
+
+				gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
+				gl.vertexAttribPointer( vertexPosition, 2, gl.FLOAT, false, 0, 0 );
+
+				gl.activeTexture( gl.TEXTURE0 );
+				gl.bindTexture( gl.TEXTURE_2D, backTarget.texture );
+
+				// Render custom shader to front buffer
+
+				gl.bindFramebuffer( gl.FRAMEBUFFER, frontTarget.framebuffer );
+
+				gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+				gl.drawArrays( gl.TRIANGLES, 0, 6 );
+
+				// Set uniforms for screen shader
+
+				gl.useProgram( screenProgram );
+
+				gl.uniform2f( screenProgram.uniformsCache[ 'resolution' ], parameters.screenWidth, parameters.screenHeight );
+				gl.uniform1i( screenProgram.uniformsCache[ 'texture' ], 1 );
+
+				gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
+				gl.vertexAttribPointer( screenVertexPosition, 2, gl.FLOAT, false, 0, 0 );
+
+				gl.activeTexture( gl.TEXTURE1 );
+				gl.bindTexture( gl.TEXTURE_2D, frontTarget.texture );
+
+				// Render front buffer to screen
+
+				gl.bindFramebuffer( gl.FRAMEBUFFER, null );
+
+				gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+				gl.drawArrays( gl.TRIANGLES, 0, 6 );
+
+				// Swap buffers
+
+				var tmp = frontTarget;
+				frontTarget = backTarget;
+				backTarget = tmp;
+
+			}
+
+			// utils
+
+			function parseTime( ms ) {
+
+				const minutes = Math.floor( ms / 60000 );
+				const seconds = ( ( ms % 60000 ) / 1000 ).toFixed( 2 ).padStart( 5, '0' );
+				return `${ minutes }:${ seconds }`;
+
+			}
+
+		</script><canvas width="207" height="448"></canvas><div id="toolbar" style="position: absolute; top: 0px; padding-top: max(25px, env(safe-area-inset-top)); padding-right: 25px; padding-bottom: 25px; padding-left: 25px; width: 100%; opacity: 0;"><div style="float: right;"><button title="Pan: left-drag, Zoom: right-drag. Use &#39;hide code&#39; for a large pan/zoom area." style="cursor: move; display: none;">pan/zoom<option>2x</option><option>4x</option><option>8x</option></select><button title="" style="color: rgb(0, 255, 0); visibility: hidden;">compiled</button><button style="visibility: hidden;">fork</button><a href="https://glslsandbox.com/" style="visibility: hidden;">parent</a><a href="https://glslsandbox.com/" style="visibility: hidden;">diff</a></div><div class="CodeMirror" style="visibility: hidden;"><div style="overflow: hidden; position: relative; width: 1px; height: 0px; top: 0px; left: 0px;"><textarea style="position: absolute; width: 10000px;" wrap="off" autocorrect="off" autocapitalize="off"></textarea></div><div class="CodeMirror-scroll cm-s-default"><div style="position: relative; height: 2121.8px; width: 725px;"><div style="position: relative; top: 0px;"><div class="CodeMirror-gutter" style="height: 2120px;"><div class="CodeMirror-gutter-text"><pre>&nbsp;&nbsp;1</pre><pre>2</pre><pre>3</pre><pre>4</pre><pre>5</pre><pre>6</pre><pre>7</pre><pre>8</pre><pre>9</pre><pre>10</pre><pre>11</pre><pre>12</pre><pre>13</pre><pre>14</pre><pre>15</pre><pre>16</pre><pre>17</pre><pre>18</pre><pre>19</pre><pre>20</pre><pre>21</pre><pre>22</pre><pre>23</pre><pre>24</pre><pre>25</pre><pre>26</pre><pre>27</pre><pre>28</pre><pre>29</pre><pre>30</pre><pre>31</pre><pre>32</pre><pre>33</pre><pre>34</pre><pre>35</pre><pre>36</pre><pre>37</pre><pre>38</pre><pre>39</pre><pre>40</pre><pre>41</pre><pre>42</pre><pre>43</pre><pre>44</pre><pre>45</pre><pre>46</pre><pre>47</pre><pre>48</pre><pre>49</pre><pre>50</pre><pre>51</pre><pre>52</pre><pre>53</pre><pre>54</pre><pre>55</pre><pre>56</pre><pre>57</pre><pre>58</pre><pre>59</pre><pre>60</pre><pre>61</pre><pre>62</pre><pre>63</pre><pre>64</pre><pre>65</pre><pre>66</pre><pre>67</pre><pre>68</pre><pre>69</pre><pre>70</pre><pre>71</pre><pre>72</pre><pre>73</pre><pre>74</pre><pre>75</pre><pre>76</pre><pre>77</pre><pre>78</pre><pre>79</pre><pre>80</pre><pre>81</pre><pre>82</pre><pre>83</pre><pre>84</pre><pre>85</pre><pre>86</pre><pre>87</pre><pre>88</pre><pre>89</pre><pre>90</pre><pre>91</pre><pre>92</pre><pre>93</pre><pre>94</pre><pre>95</pre><pre>96</pre><pre>97</pre><pre>98</pre><pre>99</pre><pre>100</pre><pre>101</pre><pre>102</pre><pre>103</pre><pre>104</pre><pre>105</pre><pre>106</pre><pre>107</pre><pre>108</pre><pre>109</pre><pre>110</pre><pre>111</pre><pre>112</pre><pre>113</pre><pre>114</pre><pre>115</pre><pre>116</pre><pre>117</pre><pre>118</pre><pre>119</pre><pre>120</pre><pre>121</pre><pre>122</pre><pre>123</pre><pre>124</pre><pre>125</pre><pre>126</pre><pre>127</pre><pre>128</pre><pre>129</pre><pre>130</pre><pre>131</pre><pre>132</pre><pre>133</pre><pre>134</pre><pre>135</pre><pre>136</pre><pre>137</pre></div></div><div class="CodeMirror-lines"><div style="position: relative; margin-left: 34px; width: 685px;"><div style="position: absolute; width: 100%; height: 0; overflow: hidden; visibility: hidden"><pre>x<br>x<br>x<br>x<br>x<br>x<br>x<br>x<br>x<br>x</pre></div><pre class="CodeMirror-cursor" style="top: 0px; left: 0px;">&nbsp;</pre><div style=""><pre><span class="cm-keyword">precision</span> <span class="cm-keyword">highp</span> <span class="cm-keyword">float</span><span class="cm-bracket">;</span></pre><pre><span class="cm-keyword">uniform</span> <span class="cm-keyword">float</span> <span class="cm-word">time</span><span class="cm-bracket">;</span></pre><pre><span class="cm-keyword">uniform</span> <span class="cm-keyword">vec2</span> <span class="cm-word">resolution</span><span class="cm-bracket">;</span></pre><pre><span class="cm-keyword">uniform</span> <span class="cm-keyword">sampler2D</span> <span class="cm-word">texture</span><span class="cm-bracket">;</span></pre><pre><span class="cm-meta">#define iGlobalTime time</span></pre><pre><span class="cm-meta">#define iTime time</span></pre><pre><span class="cm-meta">#define iResolution resolution.xy</span></pre><pre> </pre><pre><span class="cm-keyword">mat2</span> <span class="cm-word">mm2</span><span class="cm-bracket">(</span><span class="cm-keyword">in</span> <span class="cm-keyword">float</span> <span class="cm-word">a</span><span class="cm-bracket">){</span><span class="cm-keyword">float</span> <span class="cm-word">c</span> <span class="cm-operator">=</span> <span class="cm-builtin">cos</span><span class="cm-bracket">(</span><span class="cm-word">a</span><span class="cm-bracket">),</span> <span class="cm-word">s</span> <span class="cm-operator">=</span> <span class="cm-builtin">sin</span><span class="cm-bracket">(</span><span class="cm-word">a</span><span class="cm-bracket">);</span><span class="cm-keyword">return</span> <span class="cm-keyword">mat2</span><span class="cm-bracket">(</span><span class="cm-word">c</span><span class="cm-bracket">,</span><span class="cm-word">s</span><span class="cm-bracket">,</span><span class="cm-operator">-</span><span class="cm-word">s</span><span class="cm-bracket">,</span><span class="cm-word">c</span><span class="cm-bracket">);}</span></pre><pre><span class="cm-keyword">mat2</span> <span class="cm-word">m2</span> <span class="cm-operator">=</span> <span class="cm-keyword">mat2</span><span class="cm-bracket">(</span><span class="cm-number">0.0</span><span class="cm-bracket">,</span> <span class="cm-number">0.29552</span><span class="cm-bracket">,</span> <span class="cm-operator">-</span><span class="cm-number">0.0</span><span class="cm-bracket">,</span> <span class="cm-number">0.0</span><span class="cm-bracket">);</span></pre><pre><span class="cm-keyword">float</span> <span class="cm-word">tri</span><span class="cm-bracket">(</span><span class="cm-keyword">in</span> <span class="cm-keyword">float</span> <span class="cm-word">x</span><span class="cm-bracket">){</span><span class="cm-keyword">return</span> <span class="cm-builtin">clamp</span><span class="cm-bracket">(</span><span class="cm-builtin">abs</span><span class="cm-bracket">(</span><span class="cm-builtin">fract</span><span class="cm-bracket">(</span><span class="cm-word">x</span><span class="cm-bracket">)</span><span class="cm-operator">-</span><span class="cm-bracket">.</span><span class="cm-number">0</span><span class="cm-bracket">),</span><span class="cm-number">0.00</span><span class="cm-bracket">,</span><span class="cm-number">0.49</span><span class="cm-bracket">);}</span></pre><pre><span class="cm-keyword">vec2</span> <span class="cm-word">tri2</span><span class="cm-bracket">(</span><span class="cm-keyword">in</span> <span class="cm-keyword">vec2</span> <span class="cm-word">p</span><span class="cm-bracket">){</span><span class="cm-keyword">return</span> <span class="cm-keyword">vec2</span><span class="cm-bracket">(</span><span class="cm-word">tri</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-bracket">)</span><span class="cm-operator">+</span><span class="cm-word">tri</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">),</span><span class="cm-word">tri</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-operator">+</span><span class="cm-word">tri</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-bracket">)));}</span></pre><pre> </pre><pre><span class="cm-keyword">float</span> <span class="cm-word">triNoise2d</span><span class="cm-bracket">(</span><span class="cm-keyword">in</span> <span class="cm-keyword">vec2</span> <span class="cm-word">p</span><span class="cm-bracket">,</span> <span class="cm-keyword">float</span> <span class="cm-word">spd</span><span class="cm-bracket">)</span></pre><pre><span class="cm-bracket">{</span></pre><pre>    <span class="cm-keyword">float</span> <span class="cm-word">z</span><span class="cm-operator">=</span><span class="cm-number">1.8</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-keyword">float</span> <span class="cm-word">z2</span><span class="cm-operator">=</span><span class="cm-number">2.5</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-keyword">float</span> <span class="cm-word">rz</span> <span class="cm-operator">=</span> <span class="cm-number">0.</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-word">p</span> <span class="cm-operator">*=</span> <span class="cm-word">mm2</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-operator">*</span><span class="cm-number">0.06</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">vec2</span> <span class="cm-word">bp</span> <span class="cm-operator">=</span> <span class="cm-word">p</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-keyword">for</span> <span class="cm-bracket">(</span><span class="cm-keyword">float</span> <span class="cm-word">i</span><span class="cm-operator">=</span><span class="cm-number">0.</span><span class="cm-bracket">;</span> <span class="cm-word">i</span><span class="cm-operator">&lt;</span><span class="cm-number">5.</span><span class="cm-bracket">;</span> <span class="cm-word">i</span><span class="cm-operator">++</span> <span class="cm-bracket">)</span></pre><pre>    <span class="cm-bracket">{</span></pre><pre>        <span class="cm-keyword">vec2</span> <span class="cm-word">dg</span> <span class="cm-operator">=</span> <span class="cm-word">tri2</span><span class="cm-bracket">(</span><span class="cm-word">bp</span><span class="cm-operator">*</span><span class="cm-number">1.85</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-bracket">.</span><span class="cm-number">75</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-word">dg</span> <span class="cm-operator">*=</span> <span class="cm-word">mm2</span><span class="cm-bracket">(</span><span class="cm-word">time</span> <span class="cm-operator">*</span> <span class="cm-number">10.</span><span class="cm-operator">*</span><span class="cm-word">spd</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">p</span> <span class="cm-operator">-=</span> <span class="cm-word">dg</span><span class="cm-operator">/</span><span class="cm-word">z2</span><span class="cm-bracket">;</span></pre><pre> </pre><pre>        <span class="cm-word">bp</span> <span class="cm-operator">*=</span> <span class="cm-number">1.3</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-word">z2</span> <span class="cm-operator">*=</span> <span class="cm-bracket">.</span><span class="cm-number">45</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-word">z</span> <span class="cm-operator">*=</span> <span class="cm-bracket">.</span><span class="cm-number">42</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-word">p</span> <span class="cm-operator">*=</span> <span class="cm-number">1.21</span> <span class="cm-operator">+</span> <span class="cm-bracket">(</span><span class="cm-word">rz</span><span class="cm-operator">-</span><span class="cm-number">1.0</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-bracket">.</span><span class="cm-number">02</span><span class="cm-bracket">;</span></pre><pre> </pre><pre>        <span class="cm-word">rz</span> <span class="cm-operator">+=</span> <span class="cm-word">tri</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-operator">+</span><span class="cm-word">tri</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">))</span><span class="cm-operator">*</span><span class="cm-word">z</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-word">p</span><span class="cm-operator">*=</span> <span class="cm-operator">-</span><span class="cm-word">m2</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-bracket">}</span></pre><pre>    <span class="cm-keyword">return</span> <span class="cm-builtin">clamp</span><span class="cm-bracket">(</span><span class="cm-number">1.</span><span class="cm-operator">/</span><span class="cm-builtin">pow</span><span class="cm-bracket">(</span><span class="cm-word">rz</span><span class="cm-operator">*</span><span class="cm-number">29.</span><span class="cm-bracket">,</span> <span class="cm-number">1.3</span><span class="cm-bracket">),</span><span class="cm-number">0.</span><span class="cm-bracket">,.</span><span class="cm-number">55</span><span class="cm-bracket">);</span></pre><pre><span class="cm-bracket">}</span></pre><pre> </pre><pre><span class="cm-keyword">float</span> <span class="cm-word">hash21</span><span class="cm-bracket">(</span><span class="cm-keyword">in</span> <span class="cm-keyword">vec2</span> <span class="cm-word">n</span><span class="cm-bracket">){</span> <span class="cm-keyword">return</span> <span class="cm-builtin">fract</span><span class="cm-bracket">(</span><span class="cm-builtin">sin</span><span class="cm-bracket">(</span><span class="cm-builtin">dot</span><span class="cm-bracket">(</span><span class="cm-word">n</span><span class="cm-bracket">,</span> <span class="cm-keyword">vec2</span><span class="cm-bracket">(</span><span class="cm-number">12.9898</span><span class="cm-bracket">,</span> <span class="cm-number">4.1414</span><span class="cm-bracket">)))</span> <span class="cm-operator">*</span> <span class="cm-number">43758.5453</span><span class="cm-bracket">);</span> <span class="cm-bracket">}</span></pre><pre><span class="cm-keyword">vec4</span> <span class="cm-word">aurora</span><span class="cm-bracket">(</span><span class="cm-keyword">vec3</span> <span class="cm-word">ro</span><span class="cm-bracket">,</span> <span class="cm-keyword">vec3</span> <span class="cm-word">rd</span><span class="cm-bracket">)</span></pre><pre><span class="cm-bracket">{</span></pre><pre>    <span class="cm-keyword">vec4</span> <span class="cm-word">col</span> <span class="cm-operator">=</span> <span class="cm-keyword">vec4</span><span class="cm-bracket">(</span><span class="cm-number">0</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">vec4</span> <span class="cm-word">avgCol</span> <span class="cm-operator">=</span> <span class="cm-keyword">vec4</span><span class="cm-bracket">(</span><span class="cm-number">0</span><span class="cm-bracket">);</span></pre><pre> </pre><pre>    <span class="cm-keyword">for</span><span class="cm-bracket">(</span><span class="cm-keyword">float</span> <span class="cm-word">i</span><span class="cm-operator">=</span><span class="cm-number">0.</span><span class="cm-bracket">;</span><span class="cm-word">i</span><span class="cm-operator">&lt;</span><span class="cm-number">50.</span><span class="cm-bracket">;</span><span class="cm-word">i</span><span class="cm-operator">++</span><span class="cm-bracket">)</span></pre><pre>    <span class="cm-bracket">{</span></pre><pre>        <span class="cm-keyword">float</span> <span class="cm-word">of</span> <span class="cm-operator">=</span> <span class="cm-number">0.006</span><span class="cm-operator">*</span><span class="cm-word">hash21</span><span class="cm-bracket">(</span><span class="cm-keyword">gl_FragCoord</span><span class="cm-bracket">.</span><span class="cm-word">xy</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-builtin">smoothstep</span><span class="cm-bracket">(</span><span class="cm-number">0.</span><span class="cm-bracket">,</span><span class="cm-number">15.</span><span class="cm-bracket">,</span> <span class="cm-word">i</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-keyword">float</span> <span class="cm-word">pt</span> <span class="cm-operator">=</span> <span class="cm-bracket">((.</span><span class="cm-number">8</span><span class="cm-operator">+</span><span class="cm-builtin">pow</span><span class="cm-bracket">(</span><span class="cm-word">i</span><span class="cm-bracket">,</span><span class="cm-number">1.4</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-bracket">.</span><span class="cm-number">002</span><span class="cm-bracket">)</span><span class="cm-operator">-</span><span class="cm-word">ro</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">)</span><span class="cm-operator">/</span><span class="cm-bracket">(</span><span class="cm-word">rd</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-operator">*</span><span class="cm-number">2.</span><span class="cm-operator">+</span><span class="cm-number">0.4</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">pt</span> <span class="cm-operator">-=</span> <span class="cm-word">of</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-keyword">vec3</span> <span class="cm-word">bpos</span> <span class="cm-operator">=</span> <span class="cm-word">ro</span> <span class="cm-operator">+</span> <span class="cm-word">pt</span><span class="cm-operator">*</span><span class="cm-word">rd</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-keyword">vec2</span> <span class="cm-word">p</span> <span class="cm-operator">=</span> <span class="cm-word">bpos</span><span class="cm-bracket">.</span><span class="cm-word">zx</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-keyword">float</span> <span class="cm-word">rzt</span> <span class="cm-operator">=</span> <span class="cm-word">triNoise2d</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">,</span> <span class="cm-number">0.06</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-keyword">vec4</span> <span class="cm-word">col2</span> <span class="cm-operator">=</span> <span class="cm-keyword">vec4</span><span class="cm-bracket">(</span><span class="cm-number">0</span><span class="cm-bracket">,</span><span class="cm-number">0</span><span class="cm-bracket">,</span><span class="cm-number">0</span><span class="cm-bracket">,</span> <span class="cm-word">rzt</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">col2</span><span class="cm-bracket">.</span><span class="cm-word">rgb</span> <span class="cm-operator">=</span> <span class="cm-bracket">(</span><span class="cm-builtin">sin</span><span class="cm-bracket">(</span><span class="cm-number">1.</span><span class="cm-operator">-</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">2.15</span><span class="cm-bracket">,</span><span class="cm-operator">-</span><span class="cm-bracket">.</span><span class="cm-number">5</span><span class="cm-bracket">,</span> <span class="cm-number">1.2</span><span class="cm-bracket">)</span><span class="cm-operator">+</span><span class="cm-word">i</span><span class="cm-operator">*</span><span class="cm-number">0.043</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-number">0.5</span><span class="cm-operator">+</span><span class="cm-number">0.5</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-word">rzt</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-word">avgCol</span> <span class="cm-operator">=</span>  <span class="cm-builtin">mix</span><span class="cm-bracket">(</span><span class="cm-word">avgCol</span><span class="cm-bracket">,</span> <span class="cm-word">col2</span><span class="cm-bracket">,</span> <span class="cm-bracket">.</span><span class="cm-number">5</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">col</span> <span class="cm-operator">+=</span> <span class="cm-word">avgCol</span><span class="cm-operator">*</span><span class="cm-builtin">exp2</span><span class="cm-bracket">(</span><span class="cm-operator">-</span><span class="cm-word">i</span><span class="cm-operator">*</span><span class="cm-number">0.065</span> <span class="cm-operator">-</span> <span class="cm-number">2.5</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-builtin">smoothstep</span><span class="cm-bracket">(</span><span class="cm-number">0.</span><span class="cm-bracket">,</span><span class="cm-number">5.</span><span class="cm-bracket">,</span> <span class="cm-word">i</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-bracket">}</span></pre><pre> </pre><pre>    <span class="cm-word">col</span> <span class="cm-operator">*=</span> <span class="cm-bracket">(</span><span class="cm-builtin">clamp</span><span class="cm-bracket">(</span><span class="cm-word">rd</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-operator">*</span><span class="cm-number">15.</span><span class="cm-operator">+</span><span class="cm-bracket">.</span><span class="cm-number">4</span><span class="cm-bracket">,</span><span class="cm-number">0.</span><span class="cm-bracket">,</span><span class="cm-number">1.</span><span class="cm-bracket">));</span></pre><pre> </pre><pre>    <span class="cm-keyword">return</span> <span class="cm-word">col</span><span class="cm-operator">*</span><span class="cm-number">1.8</span><span class="cm-bracket">;</span></pre><pre><span class="cm-bracket">}</span></pre><pre> </pre><pre><span class="cm-keyword">vec3</span> <span class="cm-word">hash33</span><span class="cm-bracket">(</span><span class="cm-keyword">vec3</span> <span class="cm-word">p</span><span class="cm-bracket">)</span></pre><pre><span class="cm-bracket">{</span></pre><pre>    <span class="cm-word">p</span> <span class="cm-operator">=</span> <span class="cm-builtin">fract</span><span class="cm-bracket">(</span><span class="cm-word">p</span> <span class="cm-operator">*</span> <span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">443.8975</span><span class="cm-bracket">,</span><span class="cm-number">397.2973</span><span class="cm-bracket">,</span> <span class="cm-number">491.1871</span><span class="cm-bracket">));</span></pre><pre>    <span class="cm-word">p</span> <span class="cm-operator">+=</span> <span class="cm-builtin">dot</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">zxy</span><span class="cm-bracket">,</span> <span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">yxz</span><span class="cm-operator">+</span><span class="cm-number">19.27</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">return</span> <span class="cm-builtin">fract</span><span class="cm-bracket">(</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">x</span> <span class="cm-operator">*</span> <span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">,</span> <span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">z</span><span class="cm-operator">*</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-bracket">,</span> <span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-operator">*</span><span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">z</span><span class="cm-bracket">));</span></pre><pre><span class="cm-bracket">}</span></pre><pre> </pre><pre><span class="cm-keyword">vec3</span> <span class="cm-word">stars</span><span class="cm-bracket">(</span><span class="cm-keyword">in</span> <span class="cm-keyword">vec3</span> <span class="cm-word">p</span><span class="cm-bracket">)</span></pre><pre><span class="cm-bracket">{</span></pre><pre>    <span class="cm-keyword">vec3</span> <span class="cm-word">c</span> <span class="cm-operator">=</span> <span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">0.</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">float</span> <span class="cm-word">res</span> <span class="cm-operator">=</span> <span class="cm-word">iResolution</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-operator">*</span><span class="cm-number">1.</span><span class="cm-bracket">;</span></pre><pre> </pre><pre>    <span class="cm-keyword">for</span> <span class="cm-bracket">(</span><span class="cm-keyword">float</span> <span class="cm-word">i</span><span class="cm-operator">=</span><span class="cm-number">0.</span><span class="cm-bracket">;</span><span class="cm-word">i</span><span class="cm-operator">&lt;</span><span class="cm-number">4.</span><span class="cm-bracket">;</span><span class="cm-word">i</span><span class="cm-operator">++</span><span class="cm-bracket">)</span></pre><pre>    <span class="cm-bracket">{</span></pre><pre>        <span class="cm-keyword">vec3</span> <span class="cm-word">q</span> <span class="cm-operator">=</span> <span class="cm-builtin">fract</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-operator">*</span><span class="cm-bracket">(.</span><span class="cm-number">15</span><span class="cm-operator">*</span><span class="cm-word">res</span><span class="cm-bracket">))</span><span class="cm-operator">-</span><span class="cm-number">0.5</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-keyword">vec3</span> <span class="cm-word">id</span> <span class="cm-operator">=</span> <span class="cm-builtin">floor</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-operator">*</span><span class="cm-bracket">(.</span><span class="cm-number">15</span><span class="cm-operator">*</span><span class="cm-word">res</span><span class="cm-bracket">));</span></pre><pre>        <span class="cm-keyword">vec2</span> <span class="cm-word">rn</span> <span class="cm-operator">=</span> <span class="cm-word">hash33</span><span class="cm-bracket">(</span><span class="cm-word">id</span><span class="cm-bracket">).</span><span class="cm-word">xy</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-keyword">float</span> <span class="cm-word">c2</span> <span class="cm-operator">=</span> <span class="cm-number">1.</span><span class="cm-operator">-</span><span class="cm-builtin">smoothstep</span><span class="cm-bracket">(</span><span class="cm-number">0.</span><span class="cm-bracket">,.</span><span class="cm-number">6</span><span class="cm-bracket">,</span><span class="cm-builtin">length</span><span class="cm-bracket">(</span><span class="cm-word">q</span><span class="cm-bracket">));</span></pre><pre>        <span class="cm-word">c2</span> <span class="cm-operator">*=</span> <span class="cm-builtin">step</span><span class="cm-bracket">(</span><span class="cm-word">rn</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-bracket">,.</span><span class="cm-number">0005</span><span class="cm-operator">+</span><span class="cm-word">i</span><span class="cm-operator">*</span><span class="cm-word">i</span><span class="cm-operator">*</span><span class="cm-number">0.001</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">c</span> <span class="cm-operator">+=</span> <span class="cm-word">c2</span><span class="cm-operator">*</span><span class="cm-bracket">(</span><span class="cm-builtin">mix</span><span class="cm-bracket">(</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">1.0</span><span class="cm-bracket">,</span><span class="cm-number">0.49</span><span class="cm-bracket">,</span><span class="cm-number">0.1</span><span class="cm-bracket">),</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">0.75</span><span class="cm-bracket">,</span><span class="cm-number">0.9</span><span class="cm-bracket">,</span><span class="cm-number">1.</span><span class="cm-bracket">),</span><span class="cm-word">rn</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-number">0.1</span><span class="cm-operator">+</span><span class="cm-number">0.9</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">p</span> <span class="cm-operator">*=</span> <span class="cm-number">1.3</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-bracket">}</span></pre><pre>    <span class="cm-keyword">return</span> <span class="cm-word">c</span><span class="cm-operator">*</span><span class="cm-word">c</span><span class="cm-operator">*</span><span class="cm-bracket">.</span><span class="cm-number">8</span><span class="cm-bracket">;</span></pre><pre><span class="cm-bracket">}</span></pre><pre> </pre><pre><span class="cm-keyword">vec3</span> <span class="cm-word">bg</span><span class="cm-bracket">(</span><span class="cm-keyword">in</span> <span class="cm-keyword">vec3</span> <span class="cm-word">rd</span><span class="cm-bracket">)</span></pre><pre><span class="cm-bracket">{</span></pre><pre>    <span class="cm-keyword">float</span> <span class="cm-word">sd</span> <span class="cm-operator">=</span> <span class="cm-builtin">dot</span><span class="cm-bracket">(</span><span class="cm-builtin">normalize</span><span class="cm-bracket">(</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-operator">-</span><span class="cm-number">0.5</span><span class="cm-bracket">,</span> <span class="cm-operator">-</span><span class="cm-number">0.6</span><span class="cm-bracket">,</span> <span class="cm-number">0.9</span><span class="cm-bracket">)),</span> <span class="cm-word">rd</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-number">0.5</span><span class="cm-operator">+</span><span class="cm-number">0.5</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-word">sd</span> <span class="cm-operator">=</span> <span class="cm-builtin">pow</span><span class="cm-bracket">(</span><span class="cm-word">sd</span><span class="cm-bracket">,</span> <span class="cm-number">5.</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">vec3</span> <span class="cm-word">col</span> <span class="cm-operator">=</span> <span class="cm-builtin">mix</span><span class="cm-bracket">(</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">0.05</span><span class="cm-bracket">,</span><span class="cm-number">0.1</span><span class="cm-bracket">,</span><span class="cm-number">0.2</span><span class="cm-bracket">),</span> <span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">0.1</span><span class="cm-bracket">,</span><span class="cm-number">0.05</span><span class="cm-bracket">,</span><span class="cm-number">0.2</span><span class="cm-bracket">),</span> <span class="cm-word">sd</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">return</span> <span class="cm-word">col</span><span class="cm-operator">*</span><span class="cm-bracket">.</span><span class="cm-number">63</span><span class="cm-bracket">;</span></pre><pre><span class="cm-bracket">}</span></pre><pre> </pre><pre><span class="cm-keyword">void</span> <span class="cm-word">mainImage</span><span class="cm-bracket">(</span> <span class="cm-keyword">out</span> <span class="cm-keyword">vec4</span> <span class="cm-word">fragColor</span><span class="cm-bracket">,</span> <span class="cm-keyword">in</span> <span class="cm-keyword">vec2</span> <span class="cm-word">fragCoord</span> <span class="cm-bracket">)</span></pre><pre><span class="cm-bracket">{</span></pre><pre>    <span class="cm-keyword">vec2</span> <span class="cm-word">q</span> <span class="cm-operator">=</span> <span class="cm-word">fragCoord</span><span class="cm-bracket">.</span><span class="cm-word">xy</span> <span class="cm-operator">/</span> <span class="cm-word">iResolution</span><span class="cm-bracket">.</span><span class="cm-word">xy</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-keyword">vec2</span> <span class="cm-word">p</span> <span class="cm-operator">=</span> <span class="cm-word">q</span> <span class="cm-operator">-</span> <span class="cm-number">0.5</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-word">p</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-operator">*=</span><span class="cm-word">iResolution</span><span class="cm-bracket">.</span><span class="cm-word">x</span><span class="cm-operator">/</span><span class="cm-word">iResolution</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">;</span></pre><pre> </pre><pre>    <span class="cm-keyword">vec3</span> <span class="cm-word">ro</span> <span class="cm-operator">=</span> <span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">0</span><span class="cm-bracket">,</span><span class="cm-number">0</span><span class="cm-bracket">,</span><span class="cm-operator">-</span><span class="cm-number">6.7</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">vec3</span> <span class="cm-word">rd</span> <span class="cm-operator">=</span> <span class="cm-builtin">normalize</span><span class="cm-bracket">(</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-word">p</span><span class="cm-bracket">,</span><span class="cm-number">1.3</span><span class="cm-bracket">));</span></pre><pre>    <span class="cm-word">rd</span><span class="cm-bracket">.</span><span class="cm-word">xz</span> <span class="cm-operator">*=</span> <span class="cm-word">mm2</span><span class="cm-bracket">(</span><span class="cm-builtin">sin</span><span class="cm-bracket">(</span><span class="cm-word">time</span><span class="cm-operator">*</span><span class="cm-number">0.05</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-number">0.2</span><span class="cm-bracket">);</span></pre><pre> </pre><pre>    <span class="cm-keyword">vec3</span> <span class="cm-word">col</span> <span class="cm-operator">=</span> <span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">0.</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">vec3</span> <span class="cm-word">brd</span> <span class="cm-operator">=</span> <span class="cm-word">rd</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-keyword">float</span> <span class="cm-word">fade</span> <span class="cm-operator">=</span> <span class="cm-builtin">smoothstep</span><span class="cm-bracket">(</span><span class="cm-number">0.</span><span class="cm-bracket">,</span><span class="cm-number">0.01</span><span class="cm-bracket">,</span><span class="cm-builtin">abs</span><span class="cm-bracket">(</span><span class="cm-word">brd</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">))</span><span class="cm-operator">*</span><span class="cm-number">0.1</span><span class="cm-operator">+</span><span class="cm-number">0.9</span><span class="cm-bracket">;</span></pre><pre> </pre><pre>    <span class="cm-word">col</span> <span class="cm-operator">=</span> <span class="cm-word">bg</span><span class="cm-bracket">(</span><span class="cm-word">rd</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-word">fade</span><span class="cm-bracket">;</span></pre><pre> </pre><pre>    <span class="cm-keyword">if</span> <span class="cm-bracket">(</span><span class="cm-word">rd</span><span class="cm-bracket">.</span><span class="cm-word">y</span> <span class="cm-operator">&gt;</span> <span class="cm-number">0.</span><span class="cm-bracket">){</span></pre><pre>        <span class="cm-keyword">vec4</span> <span class="cm-word">aur</span> <span class="cm-operator">=</span> <span class="cm-builtin">smoothstep</span><span class="cm-bracket">(</span><span class="cm-number">0.</span><span class="cm-bracket">,</span><span class="cm-number">1.5</span><span class="cm-bracket">,</span><span class="cm-word">aurora</span><span class="cm-bracket">(</span><span class="cm-word">ro</span><span class="cm-bracket">,</span><span class="cm-word">rd</span><span class="cm-bracket">))</span><span class="cm-operator">*</span><span class="cm-word">fade</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-word">col</span> <span class="cm-operator">+=</span> <span class="cm-word">stars</span><span class="cm-bracket">(</span><span class="cm-word">rd</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">col</span> <span class="cm-operator">=</span> <span class="cm-word">col</span><span class="cm-operator">*</span><span class="cm-bracket">(</span><span class="cm-number">1.</span><span class="cm-operator">-</span><span class="cm-word">aur</span><span class="cm-bracket">.</span><span class="cm-word">a</span><span class="cm-bracket">)</span> <span class="cm-operator">+</span> <span class="cm-word">aur</span><span class="cm-bracket">.</span><span class="cm-word">rgb</span><span class="cm-bracket">;</span></pre><pre>    <span class="cm-bracket">}</span></pre><pre>    <span class="cm-keyword">else</span> <span class="cm-comment">//Reflections</span></pre><pre>    <span class="cm-bracket">{</span></pre><pre>        <span class="cm-word">rd</span><span class="cm-bracket">.</span><span class="cm-word">y</span> <span class="cm-operator">=</span> <span class="cm-builtin">abs</span><span class="cm-bracket">(</span><span class="cm-word">rd</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">col</span> <span class="cm-operator">=</span> <span class="cm-word">bg</span><span class="cm-bracket">(</span><span class="cm-word">rd</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-word">fade</span><span class="cm-operator">*</span><span class="cm-number">0.6</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-keyword">vec4</span> <span class="cm-word">aur</span> <span class="cm-operator">=</span> <span class="cm-builtin">smoothstep</span><span class="cm-bracket">(</span><span class="cm-number">0.0</span><span class="cm-bracket">,</span><span class="cm-number">2.5</span><span class="cm-bracket">,</span><span class="cm-word">aurora</span><span class="cm-bracket">(</span><span class="cm-word">ro</span><span class="cm-bracket">,</span><span class="cm-word">rd</span><span class="cm-bracket">));</span></pre><pre>        <span class="cm-word">col</span> <span class="cm-operator">+=</span> <span class="cm-word">stars</span><span class="cm-bracket">(</span><span class="cm-word">rd</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-number">0.1</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-word">col</span> <span class="cm-operator">=</span> <span class="cm-word">col</span><span class="cm-operator">*</span><span class="cm-bracket">(</span><span class="cm-number">1.</span><span class="cm-operator">-</span><span class="cm-word">aur</span><span class="cm-bracket">.</span><span class="cm-word">a</span><span class="cm-bracket">)</span> <span class="cm-operator">+</span> <span class="cm-word">aur</span><span class="cm-bracket">.</span><span class="cm-word">rgb</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-keyword">vec3</span> <span class="cm-word">pos</span> <span class="cm-operator">=</span> <span class="cm-word">ro</span> <span class="cm-operator">+</span> <span class="cm-bracket">((</span><span class="cm-number">0.5</span><span class="cm-operator">-</span><span class="cm-word">ro</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">)</span><span class="cm-operator">/</span><span class="cm-word">rd</span><span class="cm-bracket">.</span><span class="cm-word">y</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-word">rd</span><span class="cm-bracket">;</span></pre><pre>        <span class="cm-keyword">float</span> <span class="cm-word">nz2</span> <span class="cm-operator">=</span> <span class="cm-word">triNoise2d</span><span class="cm-bracket">(</span><span class="cm-word">pos</span><span class="cm-bracket">.</span><span class="cm-word">xz</span><span class="cm-operator">*</span><span class="cm-keyword">vec2</span><span class="cm-bracket">(.</span><span class="cm-number">5</span><span class="cm-bracket">,.</span><span class="cm-number">7</span><span class="cm-bracket">),</span> <span class="cm-number">0.</span><span class="cm-bracket">);</span></pre><pre>        <span class="cm-word">col</span> <span class="cm-operator">+=</span> <span class="cm-builtin">mix</span><span class="cm-bracket">(</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">0.2</span><span class="cm-bracket">,</span><span class="cm-number">0.25</span><span class="cm-bracket">,</span><span class="cm-number">0.5</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-number">0.08</span><span class="cm-bracket">,</span><span class="cm-keyword">vec3</span><span class="cm-bracket">(</span><span class="cm-number">0.3</span><span class="cm-bracket">,</span><span class="cm-number">0.3</span><span class="cm-bracket">,</span><span class="cm-number">0.5</span><span class="cm-bracket">)</span><span class="cm-operator">*</span><span class="cm-number">0.7</span><span class="cm-bracket">,</span> <span class="cm-word">nz2</span><span class="cm-operator">*</span><span class="cm-number">0.4</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-bracket">}</span></pre><pre> </pre><pre>    <span class="cm-word">fragColor</span> <span class="cm-operator">=</span> <span class="cm-keyword">vec4</span><span class="cm-bracket">(</span><span class="cm-word">col</span><span class="cm-bracket">,</span> <span class="cm-number">1</span><span class="cm-bracket">);</span></pre><pre><span class="cm-bracket">}</span></pre><pre> </pre><pre><span class="cm-keyword">void</span> <span class="cm-word">main</span><span class="cm-bracket">(</span> <span class="cm-keyword">void</span> <span class="cm-bracket">)</span> <span class="cm-bracket">{</span></pre><pre>    <span class="cm-keyword">vec4</span> <span class="cm-word">colo</span> <span class="cm-operator">=</span> <span class="cm-keyword">vec4</span><span class="cm-bracket">(</span><span class="cm-number">0.0</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-word">mainImage</span><span class="cm-bracket">(</span><span class="cm-word">colo</span><span class="cm-bracket">,</span> <span class="cm-keyword">gl_FragCoord</span><span class="cm-bracket">.</span><span class="cm-word">xy</span><span class="cm-bracket">);</span></pre><pre>    <span class="cm-keyword">gl_FragColor</span> <span class="cm-operator">=</span> <span class="cm-word">colo</span><span class="cm-bracket">;</span></pre><pre><span class="cm-bracket">}</span></pre><pre> </pre></div></div></div></div></div></div></div>
+
+	
+
+</body></html>
